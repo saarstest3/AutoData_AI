@@ -1,0 +1,5 @@
+{
+  "name": "AutoData AI Agent",
+  "description": "An intelligent multi-stage vehicle data management system that initializes, expands, and maintains a sorted CSV database of global car models using Gemini AI.",
+  "requestFramePermissions": []
+}
