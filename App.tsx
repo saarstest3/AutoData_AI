@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { 
   VehicleRecord, 
@@ -325,22 +326,23 @@ const App: React.FC = () => {
     });
   }, [paginatedData, selectedRowKeys, getRecordKey]);
 
-  const handleDeleteSelected = () => {
-    const currentSelectedCount = selectedRowKeys.size;
-    if (currentSelectedCount === 0) return;
-
-    if (window.confirm(`האם למחוק ${currentSelectedCount} רשומות שנבחרו מהמאגר?`)) {
-      // Create a local snapshot of keys to avoid closure issues during filter
-      const keysToDelete = new Set(selectedRowKeys);
-      
-      setDatabase(prevDb => {
-        return prevDb.filter(record => !keysToDelete.has(getRecordKey(record)));
-      });
-      
-      setSelectedRowKeys(new Set());
-      addLog(`המחיקה הושלמה: ${currentSelectedCount} רשומות הוסרו.`);
+  // STABLE DELETE HANDLER
+  const handleDeleteSelected = useCallback((e: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
     }
-  };
+    
+    const count = selectedRowKeys.size;
+    if (count === 0) return;
+
+    if (window.confirm(`האם למחוק ${count} רשומות שנבחרו מהמאגר?`)) {
+      const keysToDelete = new Set(selectedRowKeys);
+      setDatabase(prevDb => prevDb.filter(record => !keysToDelete.has(getRecordKey(record))));
+      setSelectedRowKeys(new Set());
+      addLog(`המחיקה הושלמה: ${count} רשומות הוסרו.`);
+    }
+  }, [selectedRowKeys, getRecordKey, addLog]);
 
   const canEditModel = selectedManufacturer !== 'ALL' && selectedManufacturer !== 'NEW';
   const allOnPageSelected = paginatedData.length > 0 && paginatedData.every(v => selectedRowKeys.has(getRecordKey(v)));
@@ -373,7 +375,7 @@ const App: React.FC = () => {
       )}
 
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-40 flex items-center justify-between shadow-sm">
+      <header className="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-50 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg rotate-3">
             <i className="fas fa-car-side"></i>
@@ -385,12 +387,12 @@ const App: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Delete Button - Functional and simplified click handling */}
+          {/* Delete Button - Fixed Interaction */}
           {selectedRowKeys.size > 0 && (
             <button 
               type="button"
               onClick={handleDeleteSelected}
-              className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-md transform active:scale-95 cursor-pointer pointer-events-auto"
+              className="relative z-[60] flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-md transform active:scale-95 cursor-pointer pointer-events-auto"
             >
               <i className="fas fa-trash-alt"></i>
               מחק {selectedRowKeys.size} רשומות
@@ -712,7 +714,7 @@ const App: React.FC = () => {
                     )}
                     <div className="h-10 w-px bg-slate-200"></div>
                     
-                    {/* Selected Count moved next to Total Found */}
+                    {/* Selected Count label precisely next to Total Found */}
                     {selectedRowKeys.size > 0 && (
                       <div className="text-right ml-4" dir="ltr">
                         <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest leading-none mb-1">Selected</p>
@@ -848,7 +850,7 @@ const App: React.FC = () => {
       {/* Footer */}
       <footer className="bg-white border-t border-slate-100 px-8 py-3 flex items-center justify-between">
         <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em]">
-          AUTO-DATA AGENT ENGINE v2.2.8 • STABLE INTERACTION REPAIRED
+          AUTO-DATA AGENT ENGINE v2.2.9 • STABLE INTERACTION REPAIRED
         </p>
         <div className="flex gap-4 text-slate-300">
           <i className="fab fa-react"></i>

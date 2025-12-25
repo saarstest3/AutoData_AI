@@ -14,7 +14,10 @@ const vehicleSchema = {
       type: Type.STRING,
       description: "The numeric identifier of the generation only (e.g., '5' instead of 'Gen 5' or 'Mk 5')."
     },
-    Model_Code: { type: Type.STRING },
+    Model_Code: { 
+      type: Type.STRING,
+      description: "The general technical platform code. IMPORTANT: Use the broad platform code (e.g., '2K' for VW Caddy) instead of sub-variants (2K1, 2K3) unless they represent entirely different generations."
+    },
     Start_Year: { type: Type.INTEGER },
     End_Year: { type: Type.STRING },
   },
@@ -27,7 +30,8 @@ export const initializeDatabase = async (): Promise<VehicleRecord[]> => {
     contents: `ACTION: INITIALIZE_DATABASE
 TASK: Generate a starting vehicle database for popular manufacturers: Toyota, Hyundai, Skoda, Suzuki, BMW, and Mercedes-Benz. 
 Provide 2-4 recent generations for each. 
-CRITICAL RULE: The 'Generation' field must contain ONLY the numeric digit (e.g., "5"). Do not include words like "Gen", "Generation", or "Mk".
+CRITICAL RULE: The 'Generation' field must contain ONLY the numeric digit (e.g., "5"). 
+MODEL_CODE RULE: Prioritize broad platform codes (e.g., 'E210' for Corolla, '2K' for Caddy).
 Ensure values for 'End_Year' are either a 4-digit year or 'Present'.`,
     config: {
       responseMimeType: "application/json",
@@ -39,7 +43,6 @@ Ensure values for 'End_Year' are either a 4-digit year or 'Present'.`,
   });
 
   try {
-    // Correctly accessing the text property from GenerateContentResponse
     return JSON.parse(response.text || '[]');
   } catch (e) {
     console.error("Failed to parse initialization response", e);
@@ -72,7 +75,8 @@ export const suggestExpansion = async (
 ${isAllMan ? "" : `INPUT_MANUFACTURER: ${manufacturer}`}
 ${isSpecificModel ? `TARGET_MODEL: ${modelName}` : ""}
 TASK: ${taskDescription}
-CRITICAL RULE: The 'Generation' field must contain ONLY the numeric digit (e.g., "5"). Do not include words like "Gen", "Generation", or "Mk".
+CRITICAL RULE: Generation must be digit only. 
+MODEL_CODE RULE: Always prioritize the general platform/model code (e.g., '2K', 'G20') over specific manufacturing batch codes (2K1, 2K3).
 CURRENT_DATA_CONTEXT: ${context}`;
 
   const response = await ai.models.generateContent({
@@ -88,7 +92,6 @@ CURRENT_DATA_CONTEXT: ${context}`;
   });
 
   try {
-    // Correctly accessing the text property from GenerateContentResponse
     return JSON.parse(response.text || '[]');
   } catch (e) {
     console.error("Failed to parse expansion response", e);
