@@ -484,214 +484,216 @@ const App: React.FC = () => {
 
       <main className="flex-1 p-6 grid grid-cols-1 lg:grid-cols-4 gap-6 overflow-hidden">
         
-        {/* Right Sidebar */}
-        <div className="lg:col-span-1 space-y-6 overflow-y-auto max-h-[calc(100vh-140px)] scrollbar-hide">
+        {/* Right Sidebar - Updated for dynamic stretching */}
+        <div className="lg:col-span-1 flex flex-col gap-6 h-full overflow-hidden">
           
-          {/* AI Expansion Actions */}
-          <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-5">
-            <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-3">פעולות סוכן AI</h2>
-            
-            <div className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex justify-between items-center mb-1">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">טווח הרחבה (יצרן)</label>
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={toggleManufacturerSearch}
-                      className={`w-6 h-6 rounded-md flex items-center justify-center transition-all ${isManufacturerSearchOpen ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-400 border border-slate-200 hover:border-indigo-300 hover:text-indigo-500'}`}
-                    >
-                      <i className={`fas ${isManufacturerSearchOpen ? 'fa-times' : 'fa-search'} text-[10px]`}></i>
-                    </button>
-                    <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
-                      {availableManufacturers.length} יצרנים
-                    </span>
-                  </div>
-                </div>
-
-                {!isManufacturerSearchOpen ? (
-                  <select 
-                    value={selectedManufacturer}
-                    onChange={handleManufacturerChange}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none appearance-none"
-                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'left 1rem center', backgroundSize: '1em' }}
-                  >
-                    <option value="ALL">כל היצרנים (סקירה גלובלית)</option>
-                    {availableManufacturers.map(m => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                    <option value="NEW" className="text-indigo-600 font-bold tracking-tight">+ הוסף יצרן חדש...</option>
-                  </select>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    <input 
-                      type="text" 
-                      placeholder="הזן שם יצרן..."
-                      value={customManufacturer}
-                      onChange={(e) => setCustomManufacturer(e.target.value)}
-                      autoFocus
-                      className="w-full bg-white border border-indigo-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm"
-                    />
-                    <button 
-                      onClick={handleSuggest}
-                      disabled={!customManufacturer.trim() || status !== AgentStatus.IDLE}
-                      className="w-full bg-slate-900 text-white py-2.5 rounded-xl text-xs font-bold hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 shadow-lg"
-                    >
-                      <i className="fas fa-search"></i>
-                      חפש והרחב ב-AI
-                    </button>
-                  </div>
-                )}
-
-                {(showCustomInput && !isManufacturerSearchOpen) && (
-                  <div>
-                    <input 
-                      type="text" 
-                      placeholder="שם יצרן ידני..."
-                      value={customManufacturer}
-                      onChange={(e) => setCustomManufacturer(e.target.value)}
-                      className="w-full bg-white border border-indigo-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm"
-                    />
-                  </div>
-                )}
-              </div>
-
-              {!isManufacturerSearchOpen && (
-                <div className={`space-y-3 transition-opacity duration-300 ${canEditModel ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
-                  <label className="block text-[10px] font-black text-slate-400 mb-1 uppercase tracking-widest">בחר דגם ספציפי</label>
-                  <select 
-                    value={selectedModel}
-                    onChange={(e) => setSelectedModel(e.target.value)}
-                    disabled={!canEditModel}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none appearance-none disabled:bg-slate-100 disabled:text-slate-400"
-                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'left 1rem center', backgroundSize: '1em' }}
-                  >
-                    <option value="ALL">כל הדגמים</option>
-                    {availableModels.map(model => (
-                      <option key={model} value={model}>{model}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
+          <div className="flex flex-col gap-6 overflow-y-auto pr-1 scrollbar-hide pb-4">
+            {/* AI Expansion Actions */}
+            <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-5 flex-shrink-0">
+              <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-3">פעולות סוכן AI</h2>
               
-              {!isManufacturerSearchOpen && (
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">טווח הרחבה (יצרן)</label>
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={toggleManufacturerSearch}
+                        className={`w-6 h-6 rounded-md flex items-center justify-center transition-all ${isManufacturerSearchOpen ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-400 border border-slate-200 hover:border-indigo-300 hover:text-indigo-500'}`}
+                      >
+                        <i className={`fas ${isManufacturerSearchOpen ? 'fa-times' : 'fa-search'} text-[10px]`}></i>
+                      </button>
+                      <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+                        {availableManufacturers.length} יצרנים
+                      </span>
+                    </div>
+                  </div>
+
+                  {!isManufacturerSearchOpen ? (
+                    <select 
+                      value={selectedManufacturer}
+                      onChange={handleManufacturerChange}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none appearance-none"
+                      style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'left 1rem center', backgroundSize: '1em' }}
+                    >
+                      <option value="ALL">כל היצרנים (סקירה גלובלית)</option>
+                      {availableManufacturers.map(m => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                      <option value="NEW" className="text-indigo-600 font-bold tracking-tight">+ הוסף יצרן חדש...</option>
+                    </select>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      <input 
+                        type="text" 
+                        placeholder="הזן שם יצרן..."
+                        value={customManufacturer}
+                        onChange={(e) => setCustomManufacturer(e.target.value)}
+                        autoFocus
+                        className="w-full bg-white border border-indigo-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm"
+                      />
+                      <button 
+                        onClick={handleSuggest}
+                        disabled={!customManufacturer.trim() || status !== AgentStatus.IDLE}
+                        className="w-full bg-slate-900 text-white py-2.5 rounded-xl text-xs font-bold hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 shadow-lg"
+                      >
+                        <i className="fas fa-search"></i>
+                        חפש והרחב ב-AI
+                      </button>
+                    </div>
+                  )}
+
+                  {(showCustomInput && !isManufacturerSearchOpen) && (
+                    <div>
+                      <input 
+                        type="text" 
+                        placeholder="שם יצרן ידני..."
+                        value={customManufacturer}
+                        onChange={(e) => setCustomManufacturer(e.target.value)}
+                        className="w-full bg-white border border-indigo-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {!isManufacturerSearchOpen && (
+                  <div className={`space-y-3 transition-opacity duration-300 ${canEditModel ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
+                    <label className="block text-[10px] font-black text-slate-400 mb-1 uppercase tracking-widest">בחר דגם ספציפי</label>
+                    <select 
+                      value={selectedModel}
+                      onChange={(e) => setSelectedModel(e.target.value)}
+                      disabled={!canEditModel}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none appearance-none disabled:bg-slate-100 disabled:text-slate-400"
+                      style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'left 1rem center', backgroundSize: '1em' }}
+                    >
+                      <option value="ALL">כל הדגמים</option>
+                      {availableModels.map(model => (
+                        <option key={model} value={model}>{model}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                
+                {!isManufacturerSearchOpen && (
+                  <button 
+                    onClick={handleSuggest}
+                    disabled={status !== AgentStatus.IDLE}
+                    className="w-full flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3.5 rounded-2xl font-bold transition-all disabled:opacity-50 shadow-xl shadow-indigo-100"
+                  >
+                    <i className="fas fa-bolt"></i>
+                    הרץ הרחבה חכמה
+                  </button>
+                )}
+              </div>
+            </section>
+
+            {/* Table Filters (Facets) */}
+            <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-6 flex-shrink-0">
+              <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">סינוני מאגר</h2>
                 <button 
-                  onClick={handleSuggest}
-                  disabled={status !== AgentStatus.IDLE}
-                  className="w-full flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3.5 rounded-2xl font-bold transition-all disabled:opacity-50 shadow-xl shadow-indigo-100"
+                  onClick={clearFilters}
+                  className="text-[10px] font-bold text-rose-500 hover:text-rose-600"
                 >
-                  <i className="fas fa-bolt"></i>
-                  הרץ הרחבה חכמה
+                  נקה הכל
                 </button>
-              )}
-            </div>
-          </section>
-
-          {/* Table Filters (Facets) */}
-          <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-6">
-            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">סינוני מאגר</h2>
-              <button 
-                onClick={clearFilters}
-                className="text-[10px] font-bold text-rose-500 hover:text-rose-600"
-              >
-                נקה הכל
-              </button>
-            </div>
-
-            <div className="space-y-6">
-              {/* Year Facet */}
-              <div className="space-y-3">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">טווח שנים: {filterYearRange[0]} - {filterYearRange[1]}</label>
-                <div className="flex items-center gap-2">
-                  <input 
-                    type="range" 
-                    min="1950" 
-                    max="2025" 
-                    value={filterYearRange[0]}
-                    onChange={(e) => setFilterYearRange([parseInt(e.target.value), filterYearRange[1]])}
-                    className="w-full accent-indigo-600 h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer"
-                  />
-                  <input 
-                    type="range" 
-                    min="1950" 
-                    max="2025" 
-                    value={filterYearRange[1]}
-                    onChange={(e) => setFilterYearRange([filterYearRange[0], parseInt(e.target.value)])}
-                    className="w-full accent-indigo-600 h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer"
-                  />
-                </div>
               </div>
 
-              {/* Manufacturer Facet */}
-              <div className="space-y-3">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">יצרן</label>
-                <div className="max-h-40 overflow-y-auto space-y-1 pr-1 scrollbar-thin scrollbar-thumb-slate-200">
-                  {Object.entries(manufacturerCounts)
-                    .sort((a, b) => Number(b[1]) - Number(a[1]))
-                    .slice(0, 15)
-                    .map(([m, count]) => (
-                    <button 
-                      key={m}
-                      onClick={() => toggleFilterManufacturer(m)}
-                      className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs transition-all border ${filterManufacturers.includes(m) ? 'bg-indigo-600 border-indigo-600 text-white font-bold' : 'bg-slate-50 border-transparent text-slate-600 hover:bg-slate-100'}`}
-                    >
-                      <span>{m}</span>
-                      <span className="text-[9px] font-bold opacity-60">{count}</span>
-                    </button>
-                  ))}
+              <div className="space-y-6">
+                {/* Year Facet */}
+                <div className="space-y-3">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">טווח שנים: {filterYearRange[0]} - {filterYearRange[1]}</label>
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="range" 
+                      min="1950" 
+                      max="2025" 
+                      value={filterYearRange[0]}
+                      onChange={(e) => setFilterYearRange([parseInt(e.target.value), filterYearRange[1]])}
+                      className="w-full accent-indigo-600 h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <input 
+                      type="range" 
+                      min="1950" 
+                      max="2025" 
+                      value={filterYearRange[1]}
+                      onChange={(e) => setFilterYearRange([filterYearRange[0], parseInt(e.target.value)])}
+                      className="w-full accent-indigo-600 h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                {/* Manufacturer Facet */}
+                <div className="space-y-3">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">יצרן</label>
+                  <div className="max-h-32 overflow-y-auto space-y-1 pr-1 scrollbar-thin scrollbar-thumb-slate-200">
+                    {Object.entries(manufacturerCounts)
+                      .sort((a, b) => Number(b[1]) - Number(a[1]))
+                      .slice(0, 15)
+                      .map(([m, count]) => (
+                      <button 
+                        key={m}
+                        onClick={() => toggleFilterManufacturer(m)}
+                        className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs transition-all border ${filterManufacturers.includes(m) ? 'bg-indigo-600 border-indigo-600 text-white font-bold' : 'bg-slate-50 border-transparent text-slate-600 hover:bg-slate-100'}`}
+                      >
+                        <span>{m}</span>
+                        <span className="text-[9px] font-bold opacity-60">{count}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Model Facet */}
+                <div className="space-y-3">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">דגם</label>
+                  <div className="max-h-32 overflow-y-auto space-y-1 pr-1 scrollbar-thin scrollbar-thumb-slate-200">
+                    {Object.entries(modelCounts)
+                      .sort((a, b) => Number(b[1]) - Number(a[1]))
+                      .slice(0, 15)
+                      .map(([model, count]) => (
+                      <button 
+                        key={model}
+                        onClick={() => toggleFilterModel(model)}
+                        className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs transition-all border ${filterModels.includes(model) ? 'bg-indigo-600 border-indigo-600 text-white font-bold' : 'bg-slate-50 border-transparent text-slate-600 hover:bg-slate-100'}`}
+                      >
+                        <span>{model}</span>
+                        <span className="text-[9px] font-bold opacity-60">{count}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Generation Facet */}
+                <div className="space-y-3">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">דור</label>
+                  <div className="max-h-32 overflow-y-auto space-y-1 pr-1 scrollbar-thin scrollbar-thumb-slate-200">
+                    {Object.entries(generationCounts)
+                      .sort((a, b) => Number(b[0]) - Number(a[0]))
+                      .map(([gen, count]) => (
+                      <button 
+                        key={gen}
+                        onClick={() => toggleFilterGeneration(gen)}
+                        className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs transition-all border ${filterGenerations.includes(gen) ? 'bg-indigo-600 border-indigo-600 text-white font-bold' : 'bg-slate-50 border-transparent text-slate-600 hover:bg-slate-100'}`}
+                      >
+                        <span>דור {gen}</span>
+                        <span className="text-[9px] font-bold opacity-60">{count}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
+            </section>
+          </div>
 
-              {/* Model Facet */}
-              <div className="space-y-3">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">דגם</label>
-                <div className="max-h-40 overflow-y-auto space-y-1 pr-1 scrollbar-thin scrollbar-thumb-slate-200">
-                  {Object.entries(modelCounts)
-                    .sort((a, b) => Number(b[1]) - Number(a[1]))
-                    .slice(0, 15)
-                    .map(([model, count]) => (
-                    <button 
-                      key={model}
-                      onClick={() => toggleFilterModel(model)}
-                      className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs transition-all border ${filterModels.includes(model) ? 'bg-indigo-600 border-indigo-600 text-white font-bold' : 'bg-slate-50 border-transparent text-slate-600 hover:bg-slate-100'}`}
-                    >
-                      <span>{model}</span>
-                      <span className="text-[9px] font-bold opacity-60">{count}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Generation Facet */}
-              <div className="space-y-3">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">דור</label>
-                <div className="max-h-40 overflow-y-auto space-y-1 pr-1 scrollbar-thin scrollbar-thumb-slate-200">
-                  {Object.entries(generationCounts)
-                    .sort((a, b) => Number(b[0]) - Number(a[0]))
-                    .map(([gen, count]) => (
-                    <button 
-                      key={gen}
-                      onClick={() => toggleFilterGeneration(gen)}
-                      className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs transition-all border ${filterGenerations.includes(gen) ? 'bg-indigo-600 border-indigo-600 text-white font-bold' : 'bg-slate-50 border-transparent text-slate-600 hover:bg-slate-100'}`}
-                    >
-                      <span>דור {gen}</span>
-                      <span className="text-[9px] font-bold opacity-60">{count}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Activity Log */}
-          <section className="bg-slate-900 rounded-2xl shadow-2xl p-5 space-y-4 text-white overflow-hidden border border-slate-800">
-             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          {/* Activity Log - Dynamic stretching part */}
+          <section className="bg-slate-900 rounded-2xl shadow-2xl p-5 space-y-4 text-white border border-slate-800 flex-1 flex flex-col min-h-[150px] mb-4">
+             <div className="flex items-center justify-between border-b border-slate-800 pb-3 flex-shrink-0">
                <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
                  לוג פעילות
                </h2>
              </div>
-             <div className="h-40 overflow-y-auto font-mono text-[10px] space-y-2 scrollbar-thin scrollbar-thumb-slate-800" dir="ltr">
+             <div className="flex-1 overflow-y-auto font-mono text-[10px] space-y-2 scrollbar-thin scrollbar-thumb-slate-800 pr-2" dir="ltr">
                {logs.length === 0 ? (
                  <p className="text-slate-700 italic">No activity logs...</p>
                ) : (
@@ -955,7 +957,7 @@ const App: React.FC = () => {
       {/* Footer */}
       <footer className="bg-white border-t border-slate-100 px-8 py-3 flex items-center justify-between">
         <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em]">
-          AUTO-DATA AGENT ENGINE v2.3.0 • INTERACTIVE FILTERING ENHANCED
+          AUTO-DATA AGENT ENGINE v2.3.1 • DYNAMIC SIDEBAR SYNCED
         </p>
         <div className="flex gap-4 text-slate-300">
           <i className="fab fa-react"></i>
