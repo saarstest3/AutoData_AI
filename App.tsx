@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { 
   VehicleRecord, 
@@ -77,7 +76,9 @@ const App: React.FC = () => {
 
   // Persistent Auto-Save
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(database));
+    if (database.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(database));
+    }
   }, [database]);
 
   // Reset page when filtering changes
@@ -97,7 +98,6 @@ const App: React.FC = () => {
       v.Start_Year,
       v.End_Year
     ];
-    // We use a specific separator and trim/lowercase everything to ensure absolute consistency
     return parts.map(p => String(p || '').trim().toLowerCase()).join('##');
   }, []);
 
@@ -301,16 +301,16 @@ const App: React.FC = () => {
     setFilterYearRange([1950, 2025]);
   };
 
-  const handleToggleRow = (key: string) => {
+  const handleToggleRow = useCallback((key: string) => {
     setSelectedRowKeys(prev => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
       else next.add(key);
       return next;
     });
-  };
+  }, []);
 
-  const handleToggleSelectPage = () => {
+  const handleToggleSelectPage = useCallback(() => {
     const pageKeys = paginatedData.map(getRecordKey);
     const allOnPageSelected = pageKeys.every(k => selectedRowKeys.has(k));
 
@@ -323,19 +323,22 @@ const App: React.FC = () => {
       }
       return next;
     });
-  };
+  }, [paginatedData, selectedRowKeys, getRecordKey]);
 
   const handleDeleteSelected = () => {
-    const currentSelectedKeys = new Set(selectedRowKeys);
-    if (currentSelectedKeys.size === 0) return;
+    const currentSelectedCount = selectedRowKeys.size;
+    if (currentSelectedCount === 0) return;
 
-    if (window.confirm(`האם למחוק ${currentSelectedKeys.size} רשומות שנבחרו?`)) {
+    if (window.confirm(`האם למחוק ${currentSelectedCount} רשומות שנבחרו מהמאגר?`)) {
+      // Create a local snapshot of keys to avoid closure issues during filter
+      const keysToDelete = new Set(selectedRowKeys);
+      
       setDatabase(prevDb => {
-        const nextDb = prevDb.filter(record => !currentSelectedKeys.has(getRecordKey(record)));
-        return nextDb;
+        return prevDb.filter(record => !keysToDelete.has(getRecordKey(record)));
       });
+      
       setSelectedRowKeys(new Set());
-      addLog(`נמחקו ${currentSelectedKeys.size} רשומות מהמאגר.`);
+      addLog(`המחיקה הושלמה: ${currentSelectedCount} רשומות הוסרו.`);
     }
   };
 
@@ -348,8 +351,8 @@ const App: React.FC = () => {
 
       {/* No Results Modal */}
       {showNoResultsModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-10 text-center space-y-6 animate-in zoom-in-95 duration-300 border border-slate-100">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-10 text-center space-y-6 border border-slate-100">
             <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
               <i className="fas fa-search-minus text-3xl text-amber-500"></i>
             </div>
@@ -370,7 +373,7 @@ const App: React.FC = () => {
       )}
 
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-30 flex items-center justify-between shadow-sm">
+      <header className="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-40 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg rotate-3">
             <i className="fas fa-car-side"></i>
@@ -382,7 +385,20 @@ const App: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Delete Button - Functional and simplified click handling */}
+          {selectedRowKeys.size > 0 && (
+            <button 
+              type="button"
+              onClick={handleDeleteSelected}
+              className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-md transform active:scale-95 cursor-pointer pointer-events-auto"
+            >
+              <i className="fas fa-trash-alt"></i>
+              מחק {selectedRowKeys.size} רשומות
+            </button>
+          )}
+
           <button 
+            type="button"
             onClick={handleCreateNew}
             className="flex items-center gap-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-100 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm"
           >
@@ -390,6 +406,7 @@ const App: React.FC = () => {
             נקה מאגר
           </button>
           <button 
+            type="button"
             onClick={() => fileInputRef.current?.click()}
             className="flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm"
           >
@@ -397,6 +414,7 @@ const App: React.FC = () => {
             ייבוא CSV
           </button>
           <button 
+            type="button"
             onClick={exportData}
             disabled={database.length === 0}
             className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-50 shadow-md shadow-slate-200"
@@ -447,7 +465,7 @@ const App: React.FC = () => {
                     <option value="NEW" className="text-indigo-600 font-bold tracking-tight">+ הוסף יצרן חדש...</option>
                   </select>
                 ) : (
-                  <div className="animate-in slide-in-from-top-2 duration-200 flex flex-col gap-2">
+                  <div className="flex flex-col gap-2">
                     <input 
                       type="text" 
                       placeholder="הזן שם יצרן..."
@@ -468,7 +486,7 @@ const App: React.FC = () => {
                 )}
 
                 {(showCustomInput && !isManufacturerSearchOpen) && (
-                  <div className="animate-in slide-in-from-top-2 duration-200">
+                  <div>
                     <input 
                       type="text" 
                       placeholder="שם יצרן ידני..."
@@ -599,7 +617,7 @@ const App: React.FC = () => {
         {/* Main Content Area */}
         <div className="lg:col-span-3 flex flex-col min-h-0">
           {status === AgentStatus.READY_FOR_EXPANSION ? (
-            <div className="bg-white rounded-3xl shadow-2xl border border-indigo-100 overflow-hidden flex flex-col h-full animate-in slide-in-from-left-4 duration-500">
+            <div className="bg-white rounded-3xl shadow-2xl border border-indigo-100 overflow-hidden flex flex-col h-full">
               <div className="bg-indigo-600 px-8 py-5 flex items-center justify-between text-white shadow-lg">
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
@@ -670,7 +688,7 @@ const App: React.FC = () => {
           ) : (
             <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full">
               {/* Top Bar for Table */}
-              <div className="px-6 py-5 border-b border-slate-100 flex flex-col gap-4 bg-slate-50/50">
+              <div className="px-6 py-5 border-b border-slate-100 flex flex-col gap-4 bg-slate-50/50 relative z-30">
                 <div className="flex items-center justify-between">
                   <div className="relative flex-1 max-w-lg">
                     <i className="fas fa-search absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
@@ -693,36 +711,25 @@ const App: React.FC = () => {
                       </div>
                     )}
                     <div className="h-10 w-px bg-slate-200"></div>
+                    
+                    {/* Selected Count moved next to Total Found */}
+                    {selectedRowKeys.size > 0 && (
+                      <div className="text-right ml-4" dir="ltr">
+                        <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest leading-none mb-1">Selected</p>
+                        <p className="text-xl font-black text-rose-600 leading-none">{selectedRowKeys.size}</p>
+                      </div>
+                    )}
+
                     <div className="text-left" dir="ltr">
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total Found</p>
                       <p className="text-xl font-black text-indigo-600 leading-none">{filteredData.length}</p>
                     </div>
                   </div>
                 </div>
-
-                {/* Selection Controls */}
-                <div className="flex items-center justify-between min-h-[40px]">
-                  <div className="flex items-center gap-4">
-                    {selectedRowKeys.size > 0 && (
-                      <button 
-                        onClick={handleDeleteSelected}
-                        className="flex items-center gap-2 px-4 py-2 bg-rose-50 border border-rose-100 text-rose-600 rounded-xl text-xs font-bold hover:bg-rose-100 transition-all shadow-sm animate-in zoom-in-95"
-                      >
-                        <i className="fas fa-trash-alt"></i>
-                        מחק {selectedRowKeys.size} רשומות
-                      </button>
-                    )}
-                  </div>
-                  {selectedRowKeys.size > 0 && (
-                    <div className="text-xs font-bold text-slate-400">
-                      נבחרו {selectedRowKeys.size} רשומות מהסינון הנוכחי
-                    </div>
-                  )}
-                </div>
               </div>
 
               {/* Data Table */}
-              <div className="overflow-auto flex-1 scrollbar-thin scrollbar-thumb-slate-200 p-2">
+              <div className="overflow-auto flex-1 scrollbar-thin scrollbar-thumb-slate-200 p-2 relative z-10">
                 {filteredData.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-slate-300 py-20">
                     <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-6">
@@ -735,7 +742,7 @@ const App: React.FC = () => {
                   <div className="h-full flex flex-col justify-between">
                     <div className="overflow-auto">
                       <table className="w-full text-right border-separate border-spacing-y-0.5">
-                        <thead className="sticky top-0 z-10 bg-white shadow-sm">
+                        <thead className="sticky top-0 z-20 bg-white shadow-sm">
                           <tr className="text-slate-400 text-[10px] font-black uppercase tracking-widest border-b border-slate-100">
                             <th className="px-6 py-4 w-10 text-center">
                               <input 
@@ -819,7 +826,7 @@ const App: React.FC = () => {
 
       {/* Global Status Overlays */}
       {(status === AgentStatus.ANALYZING || status === AgentStatus.UPDATING) && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[110] flex items-center justify-center p-6 text-center animate-in fade-in duration-300">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[200] flex items-center justify-center p-6 text-center">
           <div className="bg-white rounded-[2.5rem] p-12 max-w-sm w-full shadow-2xl space-y-8 border border-slate-100">
             <div className="relative w-28 h-28 mx-auto">
               <div className="absolute inset-0 border-[6px] border-slate-50 rounded-full"></div>
@@ -841,7 +848,7 @@ const App: React.FC = () => {
       {/* Footer */}
       <footer className="bg-white border-t border-slate-100 px-8 py-3 flex items-center justify-between">
         <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em]">
-          AUTO-DATA AGENT ENGINE v2.2.4 • DELETION SYNC REPAIRED
+          AUTO-DATA AGENT ENGINE v2.2.8 • STABLE INTERACTION REPAIRED
         </p>
         <div className="flex gap-4 text-slate-300">
           <i className="fab fa-react"></i>
