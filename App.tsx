@@ -41,6 +41,8 @@ const App: React.FC = () => {
   // Table Filtering States (Facets)
   const [searchTerm, setSearchTerm] = useState('');
   const [filterManufacturers, setFilterManufacturers] = useState<string[]>([]);
+  const [filterModels, setFilterModels] = useState<string[]>([]);
+  const [filterGenerations, setFilterGenerations] = useState<string[]>([]);
   const [filterYearRange, setFilterYearRange] = useState<[number, number]>([1950, 2025]);
   
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -86,7 +88,7 @@ const App: React.FC = () => {
   useEffect(() => {
     setCurrentPage(1);
     setSelectedRowKeys(new Set()); 
-  }, [searchTerm, filterManufacturers, filterYearRange]);
+  }, [searchTerm, filterManufacturers, filterModels, filterGenerations, filterYearRange]);
 
   // Robust unique key generator for a vehicle record
   const getRecordKey = useCallback((v: VehicleRecord) => {
@@ -109,7 +111,7 @@ const App: React.FC = () => {
     return Array.from(new Set(combined)).sort((a, b) => (a as string).localeCompare(b as string));
   }, [database]);
 
-  // Facet Data: Counts per Manufacturer
+  // Facet Data: Counts
   const manufacturerCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     database.forEach(v => {
@@ -117,6 +119,28 @@ const App: React.FC = () => {
     });
     return counts;
   }, [database]);
+
+  const modelCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    const base = filterManufacturers.length > 0 
+      ? database.filter(v => filterManufacturers.includes(v.Manufacturer))
+      : database;
+    base.forEach(v => {
+      counts[v.Model] = (counts[v.Model] || 0) + 1;
+    });
+    return counts;
+  }, [database, filterManufacturers]);
+
+  const generationCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    const base = filterModels.length > 0 
+      ? database.filter(v => filterModels.includes(v.Model))
+      : (filterManufacturers.length > 0 ? database.filter(v => filterManufacturers.includes(v.Manufacturer)) : database);
+    base.forEach(v => {
+      counts[v.Generation] = (counts[v.Generation] || 0) + 1;
+    });
+    return counts;
+  }, [database, filterManufacturers, filterModels]);
 
   // Dynamic Model List for AI Target
   const availableModels = useMemo(() => {
@@ -137,13 +161,19 @@ const App: React.FC = () => {
       
       const matchesManufacturer = filterManufacturers.length === 0 || 
         filterManufacturers.includes(record.Manufacturer);
+
+      const matchesModel = filterModels.length === 0 || 
+        filterModels.includes(record.Model);
+
+      const matchesGeneration = filterGenerations.length === 0 || 
+        filterGenerations.includes(record.Generation);
         
       const matchesYear = record.Start_Year >= filterYearRange[0] && 
         record.Start_Year <= filterYearRange[1];
 
-      return matchesSearch && matchesManufacturer && matchesYear;
+      return matchesSearch && matchesManufacturer && matchesModel && matchesGeneration && matchesYear;
     });
-  }, [database, searchTerm, filterManufacturers, filterYearRange]);
+  }, [database, searchTerm, filterManufacturers, filterModels, filterGenerations, filterYearRange]);
 
   // Pagination Logic
   const totalPages = Math.max(1, Math.ceil(filteredData.length / RECORDS_PER_PAGE));
@@ -257,6 +287,30 @@ const App: React.FC = () => {
     );
   };
 
+  const toggleFilterModel = (model: string) => {
+    setFilterModels(prev => 
+      prev.includes(model) ? prev.filter(item => item !== model) : [...prev, model]
+    );
+  };
+
+  const toggleFilterGeneration = (gen: string) => {
+    setFilterGenerations(prev => 
+      prev.includes(gen) ? prev.filter(item => item !== gen) : [...prev, gen]
+    );
+  };
+
+  // Quick Drill-down Filter from Table
+  const applyQuickFilter = (type: 'manufacturer' | 'model' | 'generation', value: string) => {
+    if (type === 'manufacturer') {
+      setFilterManufacturers([value]);
+    } else if (type === 'model') {
+      setFilterModels([value]);
+    } else if (type === 'generation') {
+      setFilterGenerations([value]);
+    }
+    addLog(`סינון מהיר הוחל: ${value}`);
+  };
+
   const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -298,6 +352,8 @@ const App: React.FC = () => {
 
   const clearFilters = () => {
     setFilterManufacturers([]);
+    setFilterModels([]);
+    setFilterGenerations([]);
     setSearchTerm('');
     setFilterYearRange([1950, 2025]);
   };
@@ -326,7 +382,6 @@ const App: React.FC = () => {
     });
   }, [paginatedData, selectedRowKeys, getRecordKey]);
 
-  // STABLE DELETE HANDLER
   const handleDeleteSelected = useCallback((e: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
@@ -387,7 +442,7 @@ const App: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Delete Button - Fixed Interaction */}
+          {/* Delete Button */}
           {selectedRowKeys.size > 0 && (
             <button 
               type="button"
@@ -532,7 +587,7 @@ const App: React.FC = () => {
           </section>
 
           {/* Table Filters (Facets) */}
-          <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-5">
+          <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-6">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
               <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">סינוני מאגר</h2>
               <button 
@@ -565,28 +620,62 @@ const App: React.FC = () => {
                     className="w-full accent-indigo-600 h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer"
                   />
                 </div>
-                <div className="flex justify-between text-[10px] font-bold text-slate-400 px-1">
-                  <span>1950</span>
-                  <span>2025</span>
-                </div>
               </div>
 
               {/* Manufacturer Facet */}
               <div className="space-y-3">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">פילטר יצרנים</label>
-                <div className="max-h-56 overflow-y-auto space-y-1 pr-1 scrollbar-thin scrollbar-thumb-slate-200">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">יצרן</label>
+                <div className="max-h-40 overflow-y-auto space-y-1 pr-1 scrollbar-thin scrollbar-thumb-slate-200">
                   {Object.entries(manufacturerCounts)
                     .sort((a, b) => Number(b[1]) - Number(a[1]))
+                    .slice(0, 15)
                     .map(([m, count]) => (
                     <button 
                       key={m}
                       onClick={() => toggleFilterManufacturer(m)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-all border ${filterManufacturers.includes(m) ? 'bg-indigo-600 border-indigo-600 text-white font-bold shadow-md' : 'bg-slate-50 border-transparent text-slate-600 hover:bg-slate-100'}`}
+                      className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs transition-all border ${filterManufacturers.includes(m) ? 'bg-indigo-600 border-indigo-600 text-white font-bold' : 'bg-slate-50 border-transparent text-slate-600 hover:bg-slate-100'}`}
                     >
                       <span>{m}</span>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full ${filterManufacturers.includes(m) ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-500 font-bold'}`}>
-                        {count}
-                      </span>
+                      <span className="text-[9px] font-bold opacity-60">{count}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Model Facet */}
+              <div className="space-y-3">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">דגם</label>
+                <div className="max-h-40 overflow-y-auto space-y-1 pr-1 scrollbar-thin scrollbar-thumb-slate-200">
+                  {Object.entries(modelCounts)
+                    .sort((a, b) => Number(b[1]) - Number(a[1]))
+                    .slice(0, 15)
+                    .map(([model, count]) => (
+                    <button 
+                      key={model}
+                      onClick={() => toggleFilterModel(model)}
+                      className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs transition-all border ${filterModels.includes(model) ? 'bg-indigo-600 border-indigo-600 text-white font-bold' : 'bg-slate-50 border-transparent text-slate-600 hover:bg-slate-100'}`}
+                    >
+                      <span>{model}</span>
+                      <span className="text-[9px] font-bold opacity-60">{count}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Generation Facet */}
+              <div className="space-y-3">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">דור</label>
+                <div className="max-h-40 overflow-y-auto space-y-1 pr-1 scrollbar-thin scrollbar-thumb-slate-200">
+                  {Object.entries(generationCounts)
+                    .sort((a, b) => Number(b[0]) - Number(a[0]))
+                    .map(([gen, count]) => (
+                    <button 
+                      key={gen}
+                      onClick={() => toggleFilterGeneration(gen)}
+                      className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs transition-all border ${filterGenerations.includes(gen) ? 'bg-indigo-600 border-indigo-600 text-white font-bold' : 'bg-slate-50 border-transparent text-slate-600 hover:bg-slate-100'}`}
+                    >
+                      <span>דור {gen}</span>
+                      <span className="text-[9px] font-bold opacity-60">{count}</span>
                     </button>
                   ))}
                 </div>
@@ -704,7 +793,7 @@ const App: React.FC = () => {
                   </div>
                   
                   <div className="flex items-center gap-6">
-                    {(filterManufacturers.length > 0 || searchTerm !== '' || filterYearRange[0] > 1950) && (
+                    {(filterManufacturers.length > 0 || filterModels.length > 0 || filterGenerations.length > 0 || searchTerm !== '' || filterYearRange[0] > 1950) && (
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] font-black text-indigo-500 uppercase">פילטר פעיל</span>
                         <button onClick={clearFilters} className="w-5 h-5 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center text-[8px] hover:bg-indigo-100">
@@ -714,7 +803,6 @@ const App: React.FC = () => {
                     )}
                     <div className="h-10 w-px bg-slate-200"></div>
                     
-                    {/* Selected Count label precisely next to Total Found */}
                     {selectedRowKeys.size > 0 && (
                       <div className="text-right ml-4" dir="ltr">
                         <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest leading-none mb-1">Selected</p>
@@ -777,12 +865,29 @@ const App: React.FC = () => {
                                   />
                                 </td>
                                 <td className="px-6 py-5">
-                                  <span className="inline-block px-3 py-1 bg-slate-900 text-white text-[10px] font-black uppercase rounded-lg tracking-widest">
+                                  <button 
+                                    onClick={() => applyQuickFilter('manufacturer', v.Manufacturer)}
+                                    className="inline-block px-3 py-1 bg-slate-900 text-white text-[10px] font-black uppercase rounded-lg tracking-widest hover:bg-indigo-600 transition-colors"
+                                  >
                                     {v.Manufacturer}
-                                  </span>
+                                  </button>
                                 </td>
-                                <td className="px-6 py-5 font-bold text-slate-800 text-base">{v.Model}</td>
-                                <td className="px-6 py-5 text-slate-500 font-medium text-sm">{v.Generation}</td>
+                                <td className="px-6 py-5">
+                                  <button 
+                                    onClick={() => applyQuickFilter('model', v.Model)}
+                                    className="font-bold text-slate-800 text-base hover:text-indigo-600 hover:underline transition-all text-right"
+                                  >
+                                    {v.Model}
+                                  </button>
+                                </td>
+                                <td className="px-6 py-5">
+                                  <button 
+                                    onClick={() => applyQuickFilter('generation', v.Generation)}
+                                    className="text-slate-500 font-medium text-sm hover:text-indigo-600 hover:underline transition-all text-right"
+                                  >
+                                    {v.Generation}
+                                  </button>
+                                </td>
                                 <td className="px-6 py-5 text-indigo-600 font-mono text-sm font-bold bg-indigo-50/20 rounded-md">{v.Model_Code}</td>
                                 <td className="px-6 py-5 text-center font-bold text-slate-600">{v.Start_Year}</td>
                                 <td className="px-6 py-5 text-center font-bold text-slate-600">{v.End_Year}</td>
@@ -850,7 +955,7 @@ const App: React.FC = () => {
       {/* Footer */}
       <footer className="bg-white border-t border-slate-100 px-8 py-3 flex items-center justify-between">
         <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em]">
-          AUTO-DATA AGENT ENGINE v2.2.9 • STABLE INTERACTION REPAIRED
+          AUTO-DATA AGENT ENGINE v2.3.0 • INTERACTIVE FILTERING ENHANCED
         </p>
         <div className="flex gap-4 text-slate-300">
           <i className="fab fa-react"></i>
